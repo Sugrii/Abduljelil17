@@ -119,14 +119,8 @@
       padding-right: 4px;
     }
 
-    /* Scrollbars */
-    .column::-webkit-scrollbar, .sales-list::-webkit-scrollbar {
-      width: 6px;
-    }
-    .column::-webkit-scrollbar-thumb, .sales-list::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
+    .column::-webkit-scrollbar, .sales-list::-webkit-scrollbar { width: 6px; }
+    .column::-webkit-scrollbar-thumb, .sales-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
     /* Off-Canvas Sidebar */
     .sidebar-overlay {
@@ -261,7 +255,6 @@
       .modal-content button { display: none !important; }
     }
 
-    /* Mobile Responsive */
     @media (max-width: 820px) {
       html, body { overflow: auto; height: auto; }
       .app-container { height: auto; }
@@ -284,17 +277,17 @@
 
   <div class="sidebar-section">
     <h4>🔄 Real-Time Live Sync</h4>
-    <p>Enter a shared Sync Key on all your devices to automatically sync changes live.</p>
+    <p>Enter a shared Sync Key on all devices to automatically reflect changes in real time.</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
-      <input type="text" id="syncKeyInput" placeholder="Enter Sync Key (e.g. my-shop-123)">
+      <input type="text" id="syncKeyInput" placeholder="Enter Sync Key (e.g. shop-room-1)">
       <button class="btn btn-small" onclick="connectLiveSync()">Connect Live Sync</button>
-      <span class="sync-status sync-offline" id="syncBadge">Status: Local Only</span>
+      <span class="sync-status sync-offline" id="syncBadge">Status: Offline / Local</span>
     </div>
   </div>
 
   <div class="sidebar-section">
     <h4>🔒 Edit Protection Security</h4>
-    <p>Default security code is <strong>1234</strong>.</p>
+    <p>Default security code is <strong>1***</strong>.</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <button class="btn btn-small btn-secondary" onclick="changeSecurityPin()">Change Security Code</button>
     </div>
@@ -420,7 +413,7 @@
   <div class="modal-content">
     <div id="receiptContainer">
       <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase;">MICROBIZ SHOP</h3>
+        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase;">AZIGIZARO ENTERPRISE</h3>
         <p style="margin: 4px 0 0 0; font-size: 0.78rem; color:#000;" id="rDate"></p>
         <p style="margin: 2px 0 0 0; font-size: 0.78rem; color:#000;" id="rCustomer"></p>
         <p style="margin: 2px 0 0 0; font-size: 0.72rem; color:#333;" id="rTransactionId"></p>
@@ -431,7 +424,8 @@
         <span id="rTotal">GH₵ 0.00</span>
       </div>
       <div style="text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 8px;">
-        Thank you for your business!
+        Thank you for your business! <br>
+        Have a nice day!
       </div>
     </div>
     <div style="display: flex; gap: 8px; margin-top: 10px;">
@@ -442,17 +436,19 @@
 </div>
 
 <script>
-  // --- Initialize Firebase Cloud Database for Live Sync ---
+  // Replace with your Firebase Realtime Database URL if hosted on custom Firebase project
   const firebaseConfig = {
-    databaseURL: "https://microbiz-suite-default-rtdb.firebaseio.com" // Public sync endpoint
+    databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
   };
 
   let dbRef = null;
-  let isRemoteUpdate = false;
+  let isRemoteSync = false;
   let syncKey = localStorage.getItem('mb_sync_key') || '';
 
-  if (window.firebase && firebase.initializeApp) {
-    firebase.initializeApp(firebaseConfig);
+  if (window.firebase && !firebase.apps.length) {
+    try {
+      firebase.initializeApp(firebaseConfig);
+    } catch(e) { console.error("Firebase Initialization Error", e); }
   }
 
   const defaultInventory = [
@@ -474,14 +470,14 @@
     localStorage.setItem('mb_sales', JSON.stringify(salesLog));
     localStorage.setItem('mb_security_pin', securityPin);
 
-    // Sync to remote database if connected and not triggered by remote incoming update
-    if (dbRef && !isRemoteUpdate) {
+    // Push changes live to Firebase if connected
+    if (dbRef && !isRemoteSync) {
       dbRef.set({
         inventory,
         customers,
         salesLog,
         updatedAt: Date.now()
-      });
+      }).catch(err => console.error("Firebase Sync Error:", err));
     }
   }
 
@@ -499,17 +495,21 @@
     if (!syncKey || !window.firebase) return;
 
     document.getElementById('syncKeyInput').value = syncKey;
+    
+    // Detach old listeners if any
+    if(dbRef) dbRef.off();
+
     dbRef = firebase.database().ref('stores/' + syncKey);
 
     const badge = document.getElementById('syncBadge');
     badge.className = "sync-status sync-online";
-    badge.innerText = `Connected: ${syncKey}`;
+    badge.innerText = `Sync Active: ${syncKey}`;
 
-    // Listen for live updates from other devices
+    // Listen for real-time value events across devices
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        isRemoteUpdate = true;
+        isRemoteSync = true;
         if (data.inventory) inventory = data.inventory;
         if (data.customers) customers = data.customers;
         if (data.salesLog) salesLog = data.salesLog;
@@ -519,8 +519,11 @@
         renderCustomers();
         renderCart();
         renderStats();
-        isRemoteUpdate = false;
+        isRemoteSync = false;
       }
+    }, (error) => {
+      badge.className = "sync-status sync-offline";
+      badge.innerText = `Sync Failed: Check Rules`;
     });
   }
 
@@ -568,7 +571,7 @@
     }
   }
 
-  // Manual File Export/Import
+  // Backup Export/Import
   function exportFullJSON() {
     const jsonStr = JSON.stringify({ inventory, customers, salesLog }, null, 2);
     const url = URL.createObjectURL(new Blob([jsonStr], { type: "application/json" }));
@@ -594,7 +597,7 @@
     reader.readAsText(file);
   }
 
-  // Product Security Lock
+  // Card Locking System
   function toggleCardLock(id) {
     if (!unlockedCards[id]) {
       const inputPin = prompt("🔒 Security Check:\nEnter security code to unlock and edit product:");
@@ -607,7 +610,7 @@
     renderInventory();
   }
 
-  // Inventory
+  // Inventory Rendering
   function renderInventory() {
     const grid = document.getElementById('productGrid');
     const query = (document.getElementById('productSearch')?.value || '').toLowerCase().trim();
@@ -672,7 +675,7 @@
     document.getElementById('pStock').value = item.stock;
 
     document.getElementById('formTitle').innerText = '✏️ Edit Product';
-    document.getElementById('saveProductBtn').innerText = 'Update Item';
+    document.getElementById('saveProductBtn').innerText = '✨ Update Item';
     document.getElementById('cancelEditBtn').style.display = 'inline-block';
   }
 
@@ -724,7 +727,7 @@
     saveData(); renderCustomers(); document.getElementById('cName').value = ''; document.getElementById('cPhone').value = '';
   }
 
-  // Cart
+  // Cart Management
   function addToCart(pId) {
     const item = inventory.find(i => i.id === pId);
     if (!item || item.stock <= 0) return alert('Item sold out!');
@@ -784,7 +787,6 @@
     cart = []; saveData(); renderInventory(); renderCart(); renderStats();
   }
 
-  // Dynamic Print/PDF Export Supporting All Purchased Items
   function saveReceiptPDF() {
     const element = document.getElementById('receiptContainer');
     
@@ -807,7 +809,7 @@
 
   function closeReceipt() { document.getElementById('receiptModal').style.display = 'none'; }
 
-  // Daily Stats & Grouped History
+  // Stats & History
   function renderStats() {
     const todayStr = new Date().toLocaleDateString();
     let todayRev = 0, todayCount = 0;
@@ -883,7 +885,7 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 
-  // Initial App Mount
+  // App Startup Initialization
   renderInventory(); renderCustomers(); renderCart(); renderStats(); initFirebaseSync();
 </script>
 </body>
