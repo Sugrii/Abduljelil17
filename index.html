@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Azigizaro Enterprise Ltd</title>
+  <title>MicroBiz - Complete Retail Suite</title>
   <!-- html2pdf.js library for PDF printing and saving -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
@@ -38,7 +38,84 @@
       overflow: hidden;
     }
 
-    /* App Shell */
+    /* Animated Background for Auth Page */
+    .auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: linear-gradient(-45deg, #0f172a, #1e1b4b, #064e3b, #0f172a);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .auth-card {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    .auth-card h1 {
+      color: var(--accent);
+      margin: 0 0 6px 0;
+      font-size: 1.8rem;
+    }
+
+    .auth-card p.subtitle {
+      color: var(--text-muted);
+      margin: 0 0 24px 0;
+      font-size: 0.9rem;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .auth-form label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: -6px;
+    }
+
+    .auth-links {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .auth-links a {
+      color: var(--info);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* Main App Layout */
     .app-container {
       width: 100%;
       height: 100%;
@@ -66,17 +143,23 @@
     h1 { color: var(--accent); margin: 0 0 4px 0; font-size: 1.6rem; }
     p.subtitle { color: var(--text-muted); margin: 0; font-size: 0.85rem; }
 
+    .user-badge-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .menu-toggle-btn {
       background: var(--card-bg);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       padding: 8px 14px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 6px;
     }
 
     /* Summary Bar */
@@ -101,7 +184,7 @@
     .sync-online { background: #064e3b; color: #34d399; }
     .sync-offline { background: #451a03; color: #fbbf24; }
 
-    /* Desktop Viewport Body */
+    /* Viewport Body */
     .app-body {
       display: grid;
       grid-template-columns: 340px 1fr;
@@ -235,7 +318,7 @@
       background: #fff; color: #000; padding: 10px; border-radius: 4px; overflow-y: auto; flex: 1;
     }
 
-    /* Print Overrides: Support Unlimited Items on Mobile/Print */
+    /* Print Overrides */
     @media print {
       body * { visibility: hidden !important; }
       #receiptModal, #receiptModal * { visibility: visible !important; }
@@ -267,12 +350,90 @@
 </head>
 <body>
 
+<!-- Animated Login & Registration View -->
+<div class="auth-overlay" id="authScreen">
+  <div class="auth-card">
+    <h1 id="storeGreeting">AZIGIZARO ENTERPRISE</h1>
+    <p class="subtitle" id="authSubtitle">Welcome! Please sign in to continue.</p>
+
+    <!-- Login View -->
+    <div id="loginForm" class="auth-form">
+      <div>
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username">
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Enter password">
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px;" onclick="handleLogin()">Sign In</button>
+      
+      <div class="auth-links">
+        <a onclick="switchAuthView('forgot')">Forgot Password?</a>
+        <a onclick="switchAuthView('register')">Create Account</a>
+      </div>
+    </div>
+
+    <!-- Register View -->
+    <div id="registerForm" class="auth-form" style="display:none;">
+      <div>
+        <label>Create Username</label>
+        <input type="text" id="regUser" placeholder="Choose username">
+      </div>
+      <div>
+        <label>Create Password</label>
+        <input type="password" id="regPass" placeholder="Choose password">
+      </div>
+      <div>
+        <label>Security Answer (for recovery)</label>
+        <input type="text" id="regSecurity" placeholder="What is your favorite color?">
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px;" onclick="handleRegister()">Register Account</button>
+
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('login')">Already have an account? Sign In</a>
+      </div>
+    </div>
+
+    <!-- Forgot Password View -->
+    <div id="forgotForm" class="auth-form" style="display:none;">
+      <div>
+        <label>Your Username</label>
+        <input type="text" id="recUser" placeholder="Enter username">
+      </div>
+      <div>
+        <label>Security Question Answer</label>
+        <input type="text" id="recSecurity" placeholder="What is your favorite color?">
+      </div>
+      <div>
+        <label>New Password</label>
+        <input type="password" id="recNewPass" placeholder="Enter new password">
+      </div>
+      <button class="btn btn-warning" style="width: 100%; margin-top: 8px;" onclick="handleResetPassword()">Reset Password</button>
+
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('login')">Back to Sign In</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Sidebar Settings -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
 <div class="sidebar-drawer" id="sidebarDrawer">
   <div class="sidebar-header">
     <h3>⚙️ Settings & Controls</h3>
     <button class="close-sidebar-btn" onclick="toggleSidebar(false)">&times;</button>
+  </div>
+
+  <div class="sidebar-section">
+    <h4>👤 Account Management</h4>
+    <p id="accountInfoText">Logged in as: <strong>-</strong></p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="changeUsername()">Change Username</button>
+      <button class="btn btn-small btn-secondary" onclick="changeUserPassword()">Change Password</button>
+      <button class="btn btn-small btn-danger" onclick="handleLogout()">Logout Account</button>
+    </div>
   </div>
 
   <div class="sidebar-section">
@@ -287,7 +448,7 @@
 
   <div class="sidebar-section">
     <h4>🔒 Edit Protection Security</h4>
-    <p>Default security code is <strong>1***</strong>.</p>
+    <p>Default admin security code is <strong>1***</strong>.</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <button class="btn btn-small btn-secondary" onclick="changeSecurityPin()">Change Security Code</button>
     </div>
@@ -313,15 +474,19 @@
   </div>
 </div>
 
-<div class="app-container">
+<div class="app-container" id="mainApp" style="display:none;">
   <!-- Header -->
   <div class="app-header">
     <div class="top-bar">
       <div class="header-title-group">
-        <h1>Azigizaro Enterprise</h1>
+        <h1 id="appStoreHeader">Azigizaro Enterprise</h1>
         <p class="subtitle">Offline POS, Stock Control, Receipts & Multi-Device Sync</p>
       </div>
-      <button class="menu-toggle-btn" onclick="toggleSidebar(true)">⚙️ Menu</button>
+      <div class="user-badge-group">
+        <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
+          <span id="headerUserDisplay">👤 User</span> | ⚙️ Menu
+        </button>
+      </div>
     </div>
 
     <!-- Daily Reset Summary -->
@@ -413,7 +578,7 @@
   <div class="modal-content">
     <div id="receiptContainer">
       <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase;">AZIGIZARO ENTERPRISE</h3>
+        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase;" id="receiptStoreName">AZIGIZARO ENTERPRISE</h3>
         <p style="margin: 4px 0 0 0; font-size: 0.78rem; color:#000;" id="rDate"></p>
         <p style="margin: 2px 0 0 0; font-size: 0.78rem; color:#000;" id="rCustomer"></p>
         <p style="margin: 2px 0 0 0; font-size: 0.72rem; color:#333;" id="rTransactionId"></p>
@@ -424,8 +589,7 @@
         <span id="rTotal">GH₵ 0.00</span>
       </div>
       <div style="text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 8px;">
-        Thank you for your business! <br>
-        Have a nice day!
+        Thank you for your business! <br> Have a nice day and stay blessed!
       </div>
     </div>
     <div style="display: flex; gap: 8px; margin-top: 10px;">
@@ -436,7 +600,7 @@
 </div>
 
 <script>
-  // Replace with your Firebase Realtime Database URL if hosted on custom Firebase project
+  // Replace with your Realtime Database URL
   const firebaseConfig = {
     databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
   };
@@ -450,6 +614,14 @@
       firebase.initializeApp(firebaseConfig);
     } catch(e) { console.error("Firebase Initialization Error", e); }
   }
+
+  // --- User Database Setup ---
+  const defaultUsers = [
+    { username: "admin", password: "123", security: "blue" }
+  ];
+
+  let users = JSON.parse(localStorage.getItem('mb_users')) || defaultUsers;
+  let currentUser = localStorage.getItem('mb_logged_user') || null;
 
   const defaultInventory = [
     { id: 1, name: "African Print Fabric (1m)", price: 45.00, stock: 15 },
@@ -465,14 +637,22 @@
   let unlockedCards = {};
 
   function saveData() {
+    localStorage.setItem('mb_users', JSON.stringify(users));
     localStorage.setItem('mb_inventory', JSON.stringify(inventory));
     localStorage.setItem('mb_customers', JSON.stringify(customers));
     localStorage.setItem('mb_sales', JSON.stringify(salesLog));
     localStorage.setItem('mb_security_pin', securityPin);
 
-    // Push changes live to Firebase if connected
+    if (currentUser) {
+      localStorage.setItem('mb_logged_user', currentUser);
+    } else {
+      localStorage.removeItem('mb_logged_user');
+    }
+
+    // Push state live to Firebase if connected
     if (dbRef && !isRemoteSync) {
       dbRef.set({
+        users,
         inventory,
         customers,
         salesLog,
@@ -481,7 +661,136 @@
     }
   }
 
-  // --- Real-Time Sync Handlers ---
+  // --- Auth & Account Controls ---
+  function switchAuthView(view) {
+    document.getElementById('loginForm').style.display = view === 'login' ? 'flex' : 'none';
+    document.getElementById('registerForm').style.display = view === 'register' ? 'flex' : 'none';
+    document.getElementById('forgotForm').style.display = view === 'forgot' ? 'flex' : 'none';
+
+    const subtitle = document.getElementById('authSubtitle');
+    if (view === 'login') subtitle.innerText = "Welcome! Please sign in to continue.";
+    if (view === 'register') subtitle.innerText = "Create an account to manage your store.";
+    if (view === 'forgot') subtitle.innerText = "Recover your account credentials.";
+  }
+
+  function handleLogin() {
+    const userIn = document.getElementById('loginUser').value.trim();
+    const passIn = document.getElementById('loginPass').value;
+
+    if (!userIn || !passIn) return alert("Please enter both username and password.");
+
+    const match = users.find(u => u.username.toLowerCase() === userIn.toLowerCase() && u.password === passIn);
+    if (match) {
+      currentUser = match.username;
+      saveData();
+      showAppScreen();
+    } else {
+      alert("❌ Invalid Username or Password!");
+    }
+  }
+
+  function handleRegister() {
+    const username = document.getElementById('regUser').value.trim();
+    const password = document.getElementById('regPass').value;
+    const security = document.getElementById('regSecurity').value.trim();
+
+    if (!username || !password || !security) return alert("Please fill out all fields.");
+
+    if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      return alert("⚠️ Username already exists. Please pick another.");
+    }
+
+    users.push({ username, password, security });
+    currentUser = username;
+    saveData();
+    alert("✅ Account created successfully!");
+    showAppScreen();
+  }
+
+  function handleResetPassword() {
+    const username = document.getElementById('recUser').value.trim();
+    const security = document.getElementById('recSecurity').value.trim();
+    const newPass = document.getElementById('recNewPass').value;
+
+    if (!username || !security || !newPass) return alert("Please fill in all recovery fields.");
+
+    const match = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.security.toLowerCase() === security.toLowerCase());
+    if (match) {
+      match.password = newPass;
+      saveData();
+      alert("✅ Password reset successfully! You can now log in.");
+      switchAuthView('login');
+      document.getElementById('loginUser').value = username;
+    } else {
+      alert("❌ Username or Security Answer is incorrect!");
+    }
+  }
+
+  function handleLogout() {
+    if (confirm("Are you sure you want to log out?")) {
+      currentUser = null;
+      saveData();
+      toggleSidebar(false);
+      checkAuthState();
+    }
+  }
+
+  function changeUsername() {
+    const newName = prompt("Enter new username:", currentUser);
+    if (!newName || !newName.trim()) return;
+    const trimmed = newName.trim();
+
+    if (users.some(u => u.username.toLowerCase() === trimmed.toLowerCase() && u.username !== currentUser)) {
+      return alert("⚠️ That username is taken.");
+    }
+
+    const userObj = users.find(u => u.username === currentUser);
+    if (userObj) {
+      userObj.username = trimmed;
+      currentUser = trimmed;
+      saveData();
+      updateUserUI();
+      alert("✅ Username updated successfully!");
+    }
+  }
+
+  function changeUserPassword() {
+    const currentPass = prompt("Enter your current password:");
+    const userObj = users.find(u => u.username === currentUser);
+
+    if (!userObj || userObj.password !== currentPass) {
+      return alert("❌ Incorrect password.");
+    }
+
+    const newPass = prompt("Enter your new password:");
+    if (!newPass || newPass.trim() === '') return alert("⚠️ Password cannot be empty.");
+
+    userObj.password = newPass.trim();
+    saveData();
+    alert("✅ Password updated successfully!");
+  }
+
+  function checkAuthState() {
+    if (currentUser) {
+      showAppScreen();
+    } else {
+      document.getElementById('authScreen').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+    }
+  }
+
+  function showAppScreen() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    updateUserUI();
+  }
+
+  function updateUserUI() {
+    document.getElementById('headerUserDisplay').innerText = `👤 ${currentUser}`;
+    document.getElementById('accountInfoText').innerHTML = `Logged in as: <strong>${currentUser}</strong>`;
+  }
+
+  // Real-Time Sync Handlers
   function connectLiveSync() {
     const inputKey = document.getElementById('syncKeyInput').value.trim();
     if (!inputKey) return alert("Please enter a Sync Key name.");
@@ -496,7 +805,6 @@
 
     document.getElementById('syncKeyInput').value = syncKey;
     
-    // Detach old listeners if any
     if(dbRef) dbRef.off();
 
     dbRef = firebase.database().ref('stores/' + syncKey);
@@ -505,11 +813,11 @@
     badge.className = "sync-status sync-online";
     badge.innerText = `Sync Active: ${syncKey}`;
 
-    // Listen for real-time value events across devices
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
         isRemoteSync = true;
+        if (data.users) users = data.users;
         if (data.inventory) inventory = data.inventory;
         if (data.customers) customers = data.customers;
         if (data.salesLog) salesLog = data.salesLog;
@@ -529,7 +837,7 @@
 
   // Security Controls
   function changeSecurityPin() {
-    const currentPass = prompt("🔐 Enter current security code:");
+    const currentPass = prompt("🔐 Enter current admin security code:");
     if (currentPass !== securityPin) return alert("❌ Incorrect security code.");
 
     const newPass = prompt("🔑 Enter new 4-digit security code:");
@@ -558,22 +866,22 @@
   function clearAllData() {
     if (!isResetUnlocked) return;
 
-    const pinCheck = prompt("🚨 Enter security code to confirm completely clearing ALL System Data:");
+    const pinCheck = prompt("🚨 Enter admin security code to confirm completely clearing ALL System Data:");
     if (pinCheck === null) return;
     if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
 
-    if (confirm("FINAL WARNING: Are you absolutely sure? This cannot be undone.")) {
+    if (confirm("FINAL WARNING: Are you absolutely sure? This will wipe all data and reset back to login.")) {
       localStorage.clear();
-      inventory = []; customers = []; salesLog = []; cart = [];
+      inventory = []; customers = []; salesLog = []; cart = []; users = defaultUsers; currentUser = null;
       saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats();
-      toggleResetLock(); toggleSidebar(false);
+      toggleResetLock(); toggleSidebar(false); checkAuthState();
       alert("✅ System data has been successfully reset.");
     }
   }
 
   // Backup Export/Import
   function exportFullJSON() {
-    const jsonStr = JSON.stringify({ inventory, customers, salesLog }, null, 2);
+    const jsonStr = JSON.stringify({ users, inventory, customers, salesLog }, null, 2);
     const url = URL.createObjectURL(new Blob([jsonStr], { type: "application/json" }));
     const a = document.createElement("a");
     a.href = url; a.download = `MicroBiz_Database_${new Date().toISOString().slice(0, 10)}.json`;
@@ -588,6 +896,7 @@
       try {
         const data = JSON.parse(e.target.result);
         if (data.inventory && data.customers && data.salesLog) {
+          if (data.users) users = data.users;
           inventory = data.inventory; customers = data.customers; salesLog = data.salesLog;
           saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats();
           alert("Data successfully imported!"); toggleSidebar(false);
@@ -600,7 +909,7 @@
   // Card Locking System
   function toggleCardLock(id) {
     if (!unlockedCards[id]) {
-      const inputPin = prompt("🔒 Security Check:\nEnter security code to unlock and edit product:");
+      const inputPin = prompt("🔒 Security Check:\nEnter admin security code to unlock and edit product:");
       if (inputPin === null) return;
       if (inputPin !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
       unlockedCards[id] = true;
@@ -675,7 +984,7 @@
     document.getElementById('pStock').value = item.stock;
 
     document.getElementById('formTitle').innerText = '✏️ Edit Product';
-    document.getElementById('saveProductBtn').innerText = '✨ Update Item';
+    document.getElementById('saveProductBtn').innerText = 'Update Item';
     document.getElementById('cancelEditBtn').style.display = 'inline-block';
   }
 
@@ -775,9 +1084,9 @@
     const dateOnly = now.toLocaleDateString();
     const txnId = 'TXN-' + Date.now().toString().slice(-6);
 
-    salesLog.unshift({ txnId, date: timestamp, dateOnly, customer: custName, itemsCount, itemsDetails: details, total: saleTotal });
+    salesLog.unshift({ txnId, date: timestamp, dateOnly, customer: custName, itemsCount, itemsDetails: details, total: saleTotal, cashier: currentUser });
 
-    document.getElementById('rTransactionId').innerText = `Receipt #: ${txnId}`;
+    document.getElementById('rTransactionId').innerText = `Receipt #: ${txnId} | Cashier: ${currentUser}`;
     document.getElementById('rDate').innerText = `Date: ${timestamp}`;
     document.getElementById('rCustomer').innerText = `Customer: ${custName}`;
     document.getElementById('rItems').innerHTML = receiptHTML;
@@ -849,7 +1158,7 @@
       
       const txnsHTML = day.txns.map(t => `
         <div class="sales-item">
-          <span>${t.date.split(', ')[1] || t.date} - ${t.customer} (${t.itemsCount} items)</span>
+          <span>${t.date.split(', ')[1] || t.date} - ${t.customer} (${t.itemsCount} items) [${t.cashier || 'System'}]</span>
           <span style="color: var(--accent); font-weight: bold;">+GH₵ ${(t.total || 0).toFixed(2)}</span>
         </div>
       `).join('');
@@ -875,18 +1184,18 @@
 
   function exportCSV() {
     if (salesLog.length === 0) return alert('No sales available to export.');
-    let csv = "Transaction ID,Date,Customer,Product,Unit Price,Qty,Line Total,Transaction Total\n";
+    let csv = "Transaction ID,Date,Customer,Cashier,Product,Unit Price,Qty,Line Total,Transaction Total\n";
     salesLog.forEach(s => {
-      if (s.itemsDetails?.length) s.itemsDetails.forEach(i => csv += `"${s.txnId}","${s.date}","${s.customer}","${i.name}",${i.unitPrice},${i.qty},${i.lineTotal},${s.total}\n`);
-      else csv += `"${s.txnId}","${s.date}","${s.customer}","Summary",0,${s.itemsCount},${s.total},${s.total}\n`;
+      if (s.itemsDetails?.length) s.itemsDetails.forEach(i => csv += `"${s.txnId}","${s.date}","${s.customer}","${s.cashier || 'System'}","${i.name}",${i.unitPrice},${i.qty},${i.lineTotal},${s.total}\n`);
+      else csv += `"${s.txnId}","${s.date}","${s.customer}","${s.cashier || 'System'}","Summary",0,${s.itemsCount},${s.total},${s.total}\n`;
     });
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a'); a.href = url; a.download = `Sales_${Date.now()}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 
-  // App Startup Initialization
-  renderInventory(); renderCustomers(); renderCart(); renderStats(); initFirebaseSync();
+  // Startup Initialization
+  checkAuthState(); renderInventory(); renderCustomers(); renderCart(); renderStats(); initFirebaseSync();
 </script>
 </body>
 </html>
