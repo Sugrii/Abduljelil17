@@ -935,7 +935,7 @@
       const attr = isUnlocked ? '' : 'disabled';
       const label = isUnlocked ? '🔓 Lock' : '🔒 Unlock';
       const css = isUnlocked ? 'btn-secondary' : 'btn-small';
-
+ÿ
       const el = document.createElement('div');
       el.className = 'product-card';
       el.innerHTML = `
@@ -944,7 +944,7 @@
           <div class="product-price">GH₵ ${item.price.toFixed(2)}</div>
           <div class="product-stock">
             <span class="badge ${item.stock===0?'badge-out':item.stock<=5?'badge-low':'badge-in'}">
-              ${item.stock===0?'Sold Out':item.stock<=5?`Low (${item.stock})`:`Rem: ${item.stock}`}
+              ${item.stock===0?'Sold Out':item.stock<=5?`Low (${item.stock})`:`Stock Bal: ${item.stock}`}
             </span>
           </div>
         </div>
