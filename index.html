@@ -1,13 +1,15 @@
-       
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AbdulJelil17</title>
+  <title>AbdulJelil17 POS</title>
   <!-- html2pdf.js library for PDF printing and saving -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
+  <!-- JsBarcode for rendering barcodes on receipts -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
   <!-- Firebase App & Realtime Database SDKs for Real-Time Cross-Device Sync -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -112,9 +114,7 @@
       cursor: pointer;
     }
 
-    .auth-links a:hover {
-      text-decoration: underline;
-    }
+    .auth-links a:hover { text-decoration: underline; }
 
     /* Main App Layout */
     .app-container {
@@ -138,6 +138,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .header-title-group { text-align: left; }
@@ -154,13 +156,32 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 1.1rem;
+      font-size: 0.9rem;
       padding: 8px 14px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* Currency Select Header Controls */
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .currency-select {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      font-weight: bold;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      width: auto;
     }
 
     /* Summary Bar */
@@ -188,7 +209,7 @@
     /* Viewport Body */
     .app-body {
       display: grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: 360px 1fr;
       gap: 16px;
       flex: 1;
       min-height: 0;
@@ -213,7 +234,7 @@
       transition: opacity 0.3s ease;
     }
     .sidebar-drawer {
-      position: fixed; top: 0; right: -320px; width: 300px; height: 100vh;
+      position: fixed; top: 0; right: -360px; width: 340px; height: 100vh;
       background: var(--card-bg); border-left: 1px solid var(--border);
       z-index: 2001; padding: 20px; display: flex; flex-direction: column;
       gap: 15px; overflow-y: auto; transition: right 0.3s ease;
@@ -234,6 +255,26 @@
     }
     .sidebar-section h4 { margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text); }
     .sidebar-section p { margin: 0 0 10px 0; font-size: 0.78rem; color: var(--text-muted); }
+
+    /* Connected Store List Items */
+    .store-list {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0 0;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .store-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+    }
 
     /* Layout Cards */
     .section-card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
@@ -283,9 +324,10 @@
     .product-actions button { flex: 1; }
 
     /* Lists */
-    .cart-list { list-style: none; padding: 0; margin: 0 0 12px 0; max-height: 220px; overflow-y: auto; }
+    .cart-list { list-style: none; padding: 0; margin: 0 0 12px 0; max-height: 180px; overflow-y: auto; }
     .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-    .cart-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; margin-bottom: 12px; }
+    .cart-summary-line { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-muted); }
+    .cart-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; margin-bottom: 12px; color: var(--accent); border-top: 1px solid var(--border); padding-top: 8px; }
 
     .cust-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
     .cust-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
@@ -311,12 +353,16 @@
       background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 10px;
     }
     .modal-content {
-      background: #fff; color: #000; padding: 20px; border-radius: 8px; width: 100%; max-width: 360px; font-family: monospace; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      background: #fff; color: #000; padding: 20px; border-radius: 8px; width: 100%; max-width: 380px; font-family: monospace; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
       max-height: 90vh; display: flex; flex-direction: column;
     }
 
     #receiptContainer {
       background: #fff; color: #000; padding: 10px; border-radius: 4px; overflow-y: auto; flex: 1;
+    }
+
+    .receipt-row {
+      display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 3px; color: #000;
     }
 
     /* Print Overrides */
@@ -354,10 +400,9 @@
 <!-- Animated Login & Registration View -->
 <div class="auth-overlay" id="authScreen">
   <div class="auth-card">
-
-          <div class="logo">
-      <img src="2.png" width="240" alt="logo Here">
-         </div>
+    <div class="logo">
+      <img src="2.png" width="240" alt="Logo Here" onerror="this.style.display='none'">
+    </div>
     <h1 id="storeGreeting">ABDULJELIL17</h1>
     <p class="subtitle" id="authSubtitle">Welcome! Please sign in to continue.</p>
 
@@ -442,18 +487,36 @@
   </div>
 
   <div class="sidebar-section">
-    <h4>🔄 Real-Time Live Sync</h4>
-    <p>Enter a shared Sync Key on all devices to automatically reflect changes in real time.</p>
+    <h4>🏬 Store Details</h4>
+    <p>Configure store details for receipt headers.</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
-      <input type="text" id="syncKeyInput" placeholder="Enter Sync Key (e.g. shop-room-1)">
-      <button class="btn btn-small" onclick="connectLiveSync()">Connect Live Sync</button>
-      <span class="sync-status sync-offline" id="syncBadge">Status: Offline / Local</span>
+      <input type="text" id="storeNameInput" placeholder="Store Name" onchange="updateStoreDetails()">
+      <input type="text" id="storeLocationInput" placeholder="Store Location / Address" onchange="updateStoreDetails()">
+      <input type="text" id="storePhoneInput" placeholder="Store Phone Number" onchange="updateStoreDetails()">
     </div>
   </div>
 
   <div class="sidebar-section">
+    <h4>🔄 Real-Time Live Sync</h4>
+    <p>Enter a shared Sync Key or connect to an available store below.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="syncKeyInput" placeholder="Enter Sync Key (e.g. shop-room-1)">
+      <div style="display: flex; gap: 6px;">
+        <button class="btn btn-small" style="flex:1;" onclick="connectLiveSync()">Connect</button>
+        <button class="btn btn-small btn-danger" style="flex:1;" onclick="disconnectLiveSync()">Disconnect</button>
+      </div>
+      <span class="sync-status sync-offline" id="syncBadge">Status: Offline / Local</span>
+    </div>
+
+    <h5 style="margin: 12px 0 6px 0; font-size: 0.8rem; color: var(--text);">Available Connected Stores:</h5>
+    <ul class="store-list" id="availableStoresList">
+      <li style="font-size:0.75rem; color:var(--text-muted);">No active stores detected.</li>
+    </ul>
+  </div>
+
+  <div class="sidebar-section">
     <h4>🔒 Edit Protection Security</h4>
-    <p>Default admin security code is <strong>1***</strong>.</p>
+    <p>Default admin security code is <strong>1234</strong>.</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <button class="btn btn-small btn-secondary" onclick="changeSecurityPin()">Change Security Code</button>
     </div>
@@ -484,13 +547,28 @@
   <div class="app-header">
     <div class="top-bar">
       <div class="header-title-group">
-        <h1 id="appStoreHeader">AbdulJelil17</h1>
-        <p class="subtitle">Offline POS, Stock Control, Receipts & Multi-Device Sync</p>
+        <h1 id="appStoreHeader">ABDULJELIL17</h1>
+        <p class="subtitle" id="appStoreSub">Offline POS, Stock Control, Receipts & Multi-Device Sync</p>
       </div>
       <div class="user-badge-group">
-        <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
-          <span id="headerUserDisplay">👤 User</span> | ⚙️ Menu
-        </button>
+        <div class="header-controls">
+          <!-- Currency Switcher -->
+          <select id="currencySelect" class="currency-select" onchange="changeCurrency(this.value)">
+            <option value="GH₵">GH₵ (GHS)</option>
+            <option value="$">$ (USD)</option>
+            <option value="€">€ (EUR)</option>
+            <option value="£">£ (GBP)</option>
+            <option value="₦">₦ (NGN)</option>
+            <option value="KSh">KSh (KES)</option>
+            <option value="R">R (ZAR)</option>
+            <option value="C$">C$ (CAD)</option>
+            <option value="A$">A$ (AUD)</option>
+            <option value="₹">₹ (INR)</option>
+          </select>
+          <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
+            <span id="headerUserDisplay">👤 User</span> | ⚙️ Menu
+          </button>
+        </div>
       </div>
     </div>
 
@@ -518,23 +596,50 @@
         </h2>
         <div style="margin-bottom: 10px;">
           <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Select Customer (Optional):</label>
-          <select id="cartCustomer">
+          <select id="cartCustomer" onchange="handleCustomerSelect()">
             <option value="">Walk-in Customer</option>
           </select>
         </div>
+
         <ul class="cart-list" id="cartList"></ul>
-        <div class="cart-total">
-          <span>Total:</span>
-          <span id="cartTotal">GH₵ 0.00</span>
+
+        <!-- Checkout Details Input -->
+        <div style="background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 12px;">
+          <div class="form-row" style="margin-bottom: 6px;">
+            <div>
+              <label style="font-size:0.7rem; color:var(--text-muted);">Tax Rate (%)</label>
+              <input type="number" id="taxRate" value="0" min="0" step="0.1" oninput="renderCart()">
+            </div>
+            <div>
+              <label style="font-size:0.7rem; color:var(--text-muted);">Amount Tended</label>
+              <input type="number" id="tendedAmount" placeholder="0.00" step="0.01" oninput="renderCart()">
+            </div>
+          </div>
+          <div class="cart-summary-line">
+            <span>Subtotal:</span>
+            <span id="cartSubtotal">0.00</span>
+          </div>
+          <div class="cart-summary-line">
+            <span>Tax Amount:</span>
+            <span id="cartTax">0.00</span>
+          </div>
+          <div class="cart-summary-line">
+            <span>Change Due:</span>
+            <span id="cartChange" style="color:var(--info); font-weight:bold;">0.00</span>
+          </div>
+          <div class="cart-total">
+            <span>Grand Total:</span>
+            <span id="cartTotal">0.00</span>
+          </div>
         </div>
-        <button class="btn" style="width: 100%;" onclick="checkout()">Complete Sale & View Receipt</button>
+
+        <button class="btn" style="width: 100%;" onclick="showCheckoutConfirmation()">Complete Sale & View Receipt</button>
       </div>
 
       <div class="section-card">
         <h2>👥 Customer Directory</h2>
         <div class="form-row">
           <input type="text" id="cName" placeholder="Customer Name">
-          <input type="text" id="cPhone" placeholder="Phone Number">
           <button class="btn btn-secondary" onclick="addCustomer()">Add Customer</button>
         </div>
         <ul class="cust-list" id="custList"></ul>
@@ -568,7 +673,7 @@
         <input type="hidden" id="editProductId">
         <div class="form-row">
           <input type="text" id="pName" placeholder="Item Name">
-          <input type="number" id="pPrice" placeholder="Price (GH₵)" step="0.01">
+          <input type="number" id="pPrice" placeholder="Price" step="0.01">
           <input type="number" id="pStock" placeholder="Qty">
           <button class="btn" id="saveProductBtn" onclick="saveProduct()">Add Item</button>
           <button class="btn btn-secondary" id="cancelEditBtn" onclick="resetForm()" style="display:none;">Cancel</button>
@@ -578,25 +683,99 @@
   </div>
 </div>
 
+<!-- Checkout Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-content" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border);">
+    <div style="text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
+      <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent);">⚠️ Confirm Sale Order</h3>
+      <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Review items and details before processing checkout.</p>
+    </div>
+
+    <div style="font-size: 0.8rem; margin-bottom: 10px; color: var(--text-muted);">
+      <strong>Customer:</strong> <span id="confirmCustName" style="color: var(--text);"></span>
+    </div>
+
+    <div id="confirmItemsList" style="border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 8px 0; margin-bottom: 12px; max-height: 150px; overflow-y: auto;"></div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span>Subtotal:</span>
+        <span id="confirmSubtotal"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Tax:</span>
+        <span id="confirmTax"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; color: var(--accent); margin-top: 4px;">
+        <span>Grand Total:</span>
+        <span id="confirmTotal"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-muted);">
+        <span>Amount Tended:</span>
+        <span id="confirmTended"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; color: var(--info); font-weight: bold;">
+        <span>Change Due:</span>
+        <span id="confirmChange"></span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button class="btn" style="flex:1;" onclick="checkout()">Confirm & Process</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="closeConfirmModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Receipt Modal -->
 <div class="modal-overlay" id="receiptModal">
   <div class="modal-content">
     <div id="receiptContainer">
       <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase; color:#16aff0" id="receiptStoreName">ABDULJELIL17</h3>
-        <p style="margin: 4px 0 0 0; font-size: 0.78rem; color:#000;" id="rDate"></p>
-        <p style="margin: 2px 0 0 0; font-size: 0.78rem; color:#000;" id="rCustomer"></p>
+        <h3 style="margin: 0; font-size: 1.1rem; color:#16aff0; text-transform: uppercase;" id="receiptStoreName">ABDULJELIL17</h3>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#333;" id="receiptStoreLocation">Location: Main Market</p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#333;" id="receiptStorePhone">Tel: 024-000-0000</p>
+        <p style="margin: 4px 0 0 0; font-size: 0.75rem; color:#000;" id="rDate"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#000;" id="rCustomer"></p>
         <p style="margin: 2px 0 0 0; font-size: 0.72rem; color:#333;" id="rTransactionId"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.72rem; color:#333;" id="rSerialNum"></p>
       </div>
+
       <div id="rItems" style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;"></div>
-      <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 12px; font-size: 1rem; color:#000;">
-        <span>TOTAL:</span>
-        <span id="rTotal" style="color:orangered;">GH₵ 0.00</span>
+      
+      <div style="border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+        <div class="receipt-row">
+          <span>Subtotal:</span>
+          <span id="rSubtotal">0.00</span>
+        </div>
+        <div class="receipt-row">
+          <span>Tax:</span>
+          <span id="rTax">0.00</span>
+        </div>
+        <div class="receipt-row" style="font-weight: bold; font-size: 0.9rem; color:#000;">
+          <span>TOTAL:</span>
+          <span id="rTotal" style="color:orangered;">0.00</span>
+        </div>
+        <div class="receipt-row" style="margin-top:4px;">
+          <span>Tended Amount:</span>
+          <span id="rTended">0.00</span>
+        </div>
+        <div class="receipt-row">
+          <span>Change Given:</span>
+          <span id="rChange">0.00</span>
+        </div>
       </div>
-      <div style="text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 8px;">
+
+      <!-- Barcode Container -->
+      <div style="text-align: center; margin-bottom: 8px;">
+        <svg id="receiptBarcode" style="max-width: 100%; height: 50px;"></svg>
+      </div>
+
+      <div style="text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 4px;">
         Thank you for your business! <br> Have a nice day and stay blessed!
       </div>
     </div>
+
     <div style="display: flex; gap: 8px; margin-top: 10px;">
       <button class="btn" style="flex:1;" onclick="saveReceiptPDF()">Print / Save PDF</button>
       <button class="btn btn-danger" style="flex:1;" onclick="closeReceipt()">Close</button>
@@ -605,13 +784,15 @@
 </div>
 
 <script>
-  // Replace with your Realtime Database URL
+  // Firebase Configuration
   const firebaseConfig = {
     databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
   };
 
   let dbRef = null;
+  let storesRef = null;
   let isRemoteSync = false;
+  let currency = localStorage.getItem('mb_currency') || 'GH₵';
   let syncKey = localStorage.getItem('mb_sync_key') || '';
 
   if (window.firebase && !firebase.apps.length) {
@@ -620,33 +801,73 @@
     } catch(e) { console.error("Firebase Initialization Error", e); }
   }
 
-  // --- User Database Setup ---
+  // --- Default Fallbacks ---
   const defaultUsers = [
     { username: "admin", password: "123", security: "blue" }
   ];
-
-  let users = JSON.parse(localStorage.getItem('mb_users')) || defaultUsers;
-  let currentUser = localStorage.getItem('mb_logged_user') || null;
 
   const defaultInventory = [
     { id: 1, name: "African Print Fabric (1m)", price: 45.00, stock: 15 },
     { id: 2, name: "Silk Thread Roll", price: 15.00, stock: 0 }
   ];
 
-  let inventory = JSON.parse(localStorage.getItem('mb_inventory')) || defaultInventory;
-  let customers = JSON.parse(localStorage.getItem('mb_customers')) || [{ id: 101, name: "Kofi Mensah", phone: "024-000-0000" }];
-  let salesLog = JSON.parse(localStorage.getItem('mb_sales')) || [];
-  let securityPin = localStorage.getItem('mb_security_pin') || '1234';
+  let users = JSON.parse(localStorage.getItem('mb_users')) || defaultUsers;
+  let currentUser = localStorage.getItem('mb_logged_user') || null;
+
+  // Store metadata
+  let storeName = localStorage.getItem('mb_store_name') || 'ABDULJELIL17';
+  let storeLocation = localStorage.getItem('mb_store_location') || 'Accra, Ghana';
+  let storePhone = localStorage.getItem('mb_store_phone') || '024-000-0000';
+
+  // Per-User / Connected Store Dynamic Database references
+  let inventory = [];
+  let customers = [];
+  let salesLog = [];
+  let securityPin = '1234';
   let cart = [];
   let isResetUnlocked = false;
   let unlockedCards = {};
 
+  // Get current active database key (Isolated for each account unless connected to sync store)
+  function getDbStorageKey() {
+    if (syncKey) {
+      return `mb_store_data_${syncKey}`;
+    }
+    return currentUser ? `mb_db_${currentUser}` : `mb_db_guest`;
+  }
+
+  function loadUserDatabase() {
+    const key = getDbStorageKey();
+    const stored = localStorage.getItem(key);
+
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        inventory = data.inventory || [];
+        customers = data.customers || [];
+        salesLog = data.salesLog || [];
+        securityPin = data.securityPin || '1234';
+      } catch (e) {
+        inventory = defaultInventory;
+        customers = [{ id: 101, name: "Kofi Mensah" }];
+        salesLog = [];
+      }
+    } else {
+      // First time initialization for this account/store
+      inventory = JSON.parse(JSON.stringify(defaultInventory));
+      customers = [{ id: 101, name: "Kofi Mensah" }];
+      salesLog = [];
+      securityPin = '1234';
+      saveData();
+    }
+  }
+
   function saveData() {
     localStorage.setItem('mb_users', JSON.stringify(users));
-    localStorage.setItem('mb_inventory', JSON.stringify(inventory));
-    localStorage.setItem('mb_customers', JSON.stringify(customers));
-    localStorage.setItem('mb_sales', JSON.stringify(salesLog));
-    localStorage.setItem('mb_security_pin', securityPin);
+    localStorage.setItem('mb_currency', currency);
+    localStorage.setItem('mb_store_name', storeName);
+    localStorage.setItem('mb_store_location', storeLocation);
+    localStorage.setItem('mb_store_phone', storePhone);
 
     if (currentUser) {
       localStorage.setItem('mb_logged_user', currentUser);
@@ -654,10 +875,16 @@
       localStorage.removeItem('mb_logged_user');
     }
 
+    const key = getDbStorageKey();
+    const payload = { inventory, customers, salesLog, securityPin };
+    localStorage.setItem(key, JSON.stringify(payload));
+
     // Push state live to Firebase if connected
-    if (dbRef && !isRemoteSync) {
+    if (dbRef && !isRemoteSync && syncKey) {
       dbRef.set({
-        users,
+        storeName,
+        storeLocation,
+        storePhone,
         inventory,
         customers,
         salesLog,
@@ -687,6 +914,7 @@
     const match = users.find(u => u.username.toLowerCase() === userIn.toLowerCase() && u.password === passIn);
     if (match) {
       currentUser = match.username;
+      loadUserDatabase();
       saveData();
       showAppScreen();
     } else {
@@ -707,6 +935,7 @@
 
     users.push({ username, password, security });
     currentUser = username;
+    loadUserDatabase();
     saveData();
     alert("✅ Account created successfully!");
     showAppScreen();
@@ -734,6 +963,7 @@
   function handleLogout() {
     if (confirm("Are you sure you want to log out?")) {
       currentUser = null;
+      cart = [];
       saveData();
       toggleSidebar(false);
       checkAuthState();
@@ -777,6 +1007,7 @@
 
   function checkAuthState() {
     if (currentUser) {
+      loadUserDatabase();
       showAppScreen();
     } else {
       document.getElementById('authScreen').style.display = 'flex';
@@ -788,21 +1019,69 @@
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'flex';
     updateUserUI();
+    renderInventory();
+    renderCustomers();
+    renderCart();
+    renderStats();
+    initAvailableStoresListener();
   }
 
   function updateUserUI() {
     document.getElementById('headerUserDisplay').innerText = `👤 ${currentUser}`;
     document.getElementById('accountInfoText').innerHTML = `Logged in as: <strong>${currentUser}</strong>`;
+    document.getElementById('currencySelect').value = currency;
+    document.getElementById('storeNameInput').value = storeName;
+    document.getElementById('storeLocationInput').value = storeLocation;
+    document.getElementById('storePhoneInput').value = storePhone;
+    document.getElementById('appStoreHeader').innerText = storeName;
+    document.getElementById('receiptStoreName').innerText = storeName;
+    document.getElementById('receiptStoreLocation').innerText = `Location: ${storeLocation}`;
+    document.getElementById('receiptStorePhone').innerText = `Tel: ${storePhone}`;
   }
 
-  // Real-Time Sync Handlers
-  function connectLiveSync() {
-    const inputKey = document.getElementById('syncKeyInput').value.trim();
-    if (!inputKey) return alert("Please enter a Sync Key name.");
+  function updateStoreDetails() {
+    storeName = document.getElementById('storeNameInput').value.trim() || 'ABDULJELIL17';
+    storeLocation = document.getElementById('storeLocationInput').value.trim() || 'Accra, Ghana';
+    storePhone = document.getElementById('storePhoneInput').value.trim() || '024-000-0000';
+    saveData();
+    updateUserUI();
+  }
+
+  function changeCurrency(newCurr) {
+    currency = newCurr;
+    saveData();
+    renderInventory();
+    renderCart();
+    renderStats();
+  }
+
+  // --- Real-Time Live Sync & Connected Store List Handlers ---
+  function connectLiveSync(targetKey) {
+    const inputKey = targetKey || document.getElementById('syncKeyInput').value.trim();
+    if (!inputKey) return alert("Please enter or select a Store Sync Key.");
 
     syncKey = inputKey.replace(/[^a-zA-Z0-9_-]/g, '');
     localStorage.setItem('mb_sync_key', syncKey);
     initFirebaseSync();
+  }
+
+  function disconnectLiveSync() {
+    if (dbRef) dbRef.off();
+    dbRef = null;
+    syncKey = '';
+    localStorage.removeItem('mb_sync_key');
+    
+    const badge = document.getElementById('syncBadge');
+    badge.className = "sync-status sync-offline";
+    badge.innerText = `Status: Offline / Local`;
+
+    // Revert to user's isolated local account database
+    loadUserDatabase();
+    renderInventory();
+    renderCustomers();
+    renderCart();
+    renderStats();
+    alert("Disconnected from Real-Time Store. Switched to local account database.");
   }
 
   function initFirebaseSync() {
@@ -810,33 +1089,70 @@
 
     document.getElementById('syncKeyInput').value = syncKey;
     
-    if(dbRef) dbRef.off();
+    if (dbRef) dbRef.off();
 
     dbRef = firebase.database().ref('stores/' + syncKey);
 
     const badge = document.getElementById('syncBadge');
     badge.className = "sync-status sync-online";
-    badge.innerText = `Sync Active: ${syncKey}`;
+    badge.innerText = `Connected: ${syncKey}`;
 
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
         isRemoteSync = true;
-        if (data.users) users = data.users;
         if (data.inventory) inventory = data.inventory;
         if (data.customers) customers = data.customers;
         if (data.salesLog) salesLog = data.salesLog;
+        if (data.storeName) storeName = data.storeName;
+        if (data.storeLocation) storeLocation = data.storeLocation;
+        if (data.storePhone) storePhone = data.storePhone;
 
         saveData();
+        updateUserUI();
         renderInventory();
         renderCustomers();
         renderCart();
         renderStats();
         isRemoteSync = false;
+      } else {
+        // First sync for new key
+        saveData();
       }
     }, (error) => {
       badge.className = "sync-status sync-offline";
       badge.innerText = `Sync Failed: Check Rules`;
+    });
+  }
+
+  function initAvailableStoresListener() {
+    if (!window.firebase) return;
+    storesRef = firebase.database().ref('stores');
+    storesRef.on('value', (snapshot) => {
+      const stores = snapshot.val();
+      const listEl = document.getElementById('availableStoresList');
+      listEl.innerHTML = '';
+
+      if (!stores || Object.keys(stores).length === 0) {
+        listEl.innerHTML = `<li style="font-size:0.75rem; color:var(--text-muted);">No active stores detected.</li>`;
+        return;
+      }
+
+      Object.keys(stores).forEach(key => {
+        const store = stores[key];
+        const sName = store.storeName || key;
+        const isConnected = syncKey === key;
+
+        const li = document.createElement('li');
+        li.className = 'store-item';
+        li.innerHTML = `
+          <span><strong>${sName}</strong> <br><small style="color:var(--text-muted);">${key}</small></span>
+          <button class="btn btn-small ${isConnected ? 'btn-secondary' : ''}" onclick="connectLiveSync('${key}')">
+            ${isConnected ? 'Connected' : 'Connect'}
+          </button>
+        `;
+        listEl.appendChild(li);
+      });
     });
   }
 
@@ -871,22 +1187,21 @@
   function clearAllData() {
     if (!isResetUnlocked) return;
 
-    const pinCheck = prompt("🚨 Enter admin security code to confirm completely clearing ALL System Data:");
+    const pinCheck = prompt("🚨 Enter admin security code to confirm completely clearing System Data:");
     if (pinCheck === null) return;
     if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
 
-    if (confirm("FINAL WARNING: Are you absolutely sure? This will wipe all data and reset back to login.")) {
-      localStorage.clear();
-      inventory = []; customers = []; salesLog = []; cart = []; users = defaultUsers; currentUser = null;
+    if (confirm("FINAL WARNING: Are you absolutely sure? This will wipe all current store data.")) {
+      inventory = []; customers = []; salesLog = []; cart = [];
       saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats();
-      toggleResetLock(); toggleSidebar(false); checkAuthState();
+      toggleResetLock(); toggleSidebar(false);
       alert("✅ System data has been successfully reset.");
     }
   }
 
   // Backup Export/Import
   function exportFullJSON() {
-    const jsonStr = JSON.stringify({ users, inventory, customers, salesLog }, null, 2);
+    const jsonStr = JSON.stringify({ users, inventory, customers, salesLog, storeName, storeLocation, storePhone }, null, 2);
     const url = URL.createObjectURL(new Blob([jsonStr], { type: "application/json" }));
     const a = document.createElement("a");
     a.href = url; a.download = `MicroBiz_Database_${new Date().toISOString().slice(0, 10)}.json`;
@@ -902,8 +1217,11 @@
         const data = JSON.parse(e.target.result);
         if (data.inventory && data.customers && data.salesLog) {
           if (data.users) users = data.users;
+          if (data.storeName) storeName = data.storeName;
+          if (data.storeLocation) storeLocation = data.storeLocation;
+          if (data.storePhone) storePhone = data.storePhone;
           inventory = data.inventory; customers = data.customers; salesLog = data.salesLog;
-          saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats();
+          saveData(); updateUserUI(); renderInventory(); renderCustomers(); renderCart(); renderStats();
           alert("Data successfully imported!"); toggleSidebar(false);
         } else alert("Invalid backup file format.");
       } catch (err) { alert("Error parsing file: " + err.message); }
@@ -946,7 +1264,7 @@
       el.innerHTML = `
         <div class="product-info" onclick="addToCart(${item.id})">
           <div class="product-name">${item.name}</div>
-          <div class="product-price">GH₵ ${item.price.toFixed(2)}</div>
+          <div class="product-price">${currency} ${item.price.toFixed(2)}</div>
           <div class="product-stock">
             <span class="badge ${item.stock===0?'badge-out':item.stock<=5?'badge-low':'badge-in'}">
               ${item.stock===0?'Sold Out':item.stock<=5?`Low (${item.stock})`:`Stock Bal: ${item.stock}`}
@@ -1029,19 +1347,23 @@
     const list = document.getElementById('custList'), select = document.getElementById('cartCustomer');
     list.innerHTML = ''; select.innerHTML = '<option value="">Walk-in Customer</option>';
     customers.forEach(c => {
-      list.innerHTML += `<li class="cust-item"><span><strong>${c.name}</strong> (${c.phone})</span></li>`;
+      list.innerHTML += `<li class="cust-item"><span><strong>${c.name}</strong></span></li>`;
       select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
     });
   }
 
-  function addCustomer() {
-    const name = document.getElementById('cName').value.trim(), phone = document.getElementById('cPhone').value.trim();
-    if (!name || !phone) return alert('Provide name and phone.');
-    customers.push({ id: Date.now(), name, phone });
-    saveData(); renderCustomers(); document.getElementById('cName').value = ''; document.getElementById('cPhone').value = '';
+  function handleCustomerSelect() {
+    // Re-renders cart/summary if needed
   }
 
-  // Cart Management
+  function addCustomer() {
+    const name = document.getElementById('cName').value.trim();
+    if (!name) return alert('Provide name.');
+    customers.push({ id: Date.now(), name });
+    saveData(); renderCustomers(); document.getElementById('cName').value = '';
+  }
+
+  // Cart Management & Calculations
   function addToCart(pId) {
     const item = inventory.find(i => i.id === pId);
     if (!item || item.stock <= 0) return alert('Item sold out!');
@@ -1054,51 +1376,161 @@
 
   function clearCart() { cart = []; renderCart(); }
 
-  function renderCart() {
-    const list = document.getElementById('cartList'), totalEl = document.getElementById('cartTotal');
-    list.innerHTML = '';
-    if (cart.length === 0) { list.innerHTML = '<li>Tap products on the right to add to cart</li>'; totalEl.innerText = 'GH₵ 0.00'; return; }
+  function getCartCalculations() {
+    let subtotal = 0;
+    cart.forEach(c => subtotal += (c.price * c.qty));
 
-    let total = 0;
-    cart.forEach(c => {
-      total += (c.price * c.qty);
-      list.innerHTML += `<li class="cart-item"><span>${c.name} (x${c.qty})</span><span>GH₵ ${(c.price * c.qty).toFixed(2)}</span></li>`;
-    });
-    totalEl.innerText = `GH₵ ${total.toFixed(2)}`;
+    const taxRate = parseFloat(document.getElementById('taxRate')?.value) || 0;
+    const taxVal = subtotal * (taxRate / 100);
+    const grandTotal = subtotal + taxVal;
+
+    const tended = parseFloat(document.getElementById('tendedAmount')?.value) || 0;
+    const change = tended >= grandTotal ? (tended - grandTotal) : 0;
+
+    return { subtotal, taxRate, taxVal, grandTotal, tended, change };
   }
 
-  // Checkout
-  function checkout() {
+  function renderCart() {
+    const list = document.getElementById('cartList');
+    list.innerHTML = '';
+
+    if (cart.length === 0) {
+      list.innerHTML = '<li>Tap products on the right to add to cart</li>';
+      document.getElementById('cartSubtotal').innerText = `${currency} 0.00`;
+      document.getElementById('cartTax').innerText = `${currency} 0.00`;
+      document.getElementById('cartChange').innerText = `${currency} 0.00`;
+      document.getElementById('cartTotal').innerText = `${currency} 0.00`;
+      return;
+    }
+
+    cart.forEach(c => {
+      list.innerHTML += `<li class="cart-item"><span>${c.name} (x${c.qty})</span><span>${currency} ${(c.price * c.qty).toFixed(2)}</span></li>`;
+    });
+
+    const calc = getCartCalculations();
+    document.getElementById('cartSubtotal').innerText = `${currency} ${calc.subtotal.toFixed(2)}`;
+    document.getElementById('cartTax').innerText = `${currency} ${calc.taxVal.toFixed(2)}`;
+    document.getElementById('cartChange').innerText = `${currency} ${calc.change.toFixed(2)}`;
+    document.getElementById('cartTotal').innerText = `${currency} ${calc.grandTotal.toFixed(2)}`;
+  }
+
+  // Confirmation View Before Checkout
+  function showCheckoutConfirmation() {
     if (cart.length === 0) return alert('Cart is empty.');
-    
-    const custName = document.getElementById('cartCustomer').value || 'Walk-in Customer';
-    let saleTotal = 0, itemsCount = 0, receiptHTML = '', details = [];
+
+    const calc = getCartCalculations();
+    if (calc.tended < calc.grandTotal && calc.tended > 0) {
+      if (!confirm(`Warning: Tended amount (${currency} ${calc.tended.toFixed(2)}) is less than total (${currency} ${calc.grandTotal.toFixed(2)}). Continue?`)) {
+        return;
+      }
+    }
+
+    const custSelect = document.getElementById('cartCustomer');
+    const custName = custSelect.value || 'Walk-in Customer';
+
+    document.getElementById('confirmCustName').innerText = custName;
+
+    let itemsHTML = '';
+    cart.forEach(c => {
+      itemsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span>${c.name} (x${c.qty})</span>
+        <span>${currency} ${(c.price * c.qty).toFixed(2)}</span>
+      </div>`;
+    });
+
+    document.getElementById('confirmItemsList').innerHTML = itemsHTML;
+    document.getElementById('confirmSubtotal').innerText = `${currency} ${calc.subtotal.toFixed(2)}`;
+    document.getElementById('confirmTax').innerText = `${currency} ${calc.taxVal.toFixed(2)}`;
+    document.getElementById('confirmTotal').innerText = `${currency} ${calc.grandTotal.toFixed(2)}`;
+    document.getElementById('confirmTended').innerText = `${currency} ${(calc.tended || calc.grandTotal).toFixed(2)}`;
+    document.getElementById('confirmChange').innerText = `${currency} ${calc.change.toFixed(2)}`;
+
+    document.getElementById('confirmModal').style.display = 'flex';
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+  }
+
+  // Finalized Checkout Execution
+  function checkout() {
+    closeConfirmModal();
+
+    const custSelect = document.getElementById('cartCustomer');
+    const custName = custSelect.value || 'Walk-in Customer';
+
+    const calc = getCartCalculations();
+
+    let itemsCount = 0, receiptHTML = '', details = [];
 
     cart.forEach(c => {
       const invItem = inventory.find(i => i.id === c.id);
       if (invItem) invItem.stock -= c.qty;
       const lineTotal = c.price * c.qty;
-      saleTotal += lineTotal; itemsCount += c.qty;
+      itemsCount += c.qty;
       details.push({ name: c.name, unitPrice: c.price, qty: c.qty, lineTotal });
       receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px; color:#000;">
-        <span>${c.name} (x${c.qty} @ GH₵ ${c.price.toFixed(2)})</span><span>GH₵ ${lineTotal.toFixed(2)}</span></div>`;
+        <span>${c.name} (x${c.qty} @ ${currency} ${c.price.toFixed(2)})</span><span>${currency} ${lineTotal.toFixed(2)}</span></div>`;
     });
 
     const now = new Date();
     const timestamp = now.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
     const dateOnly = now.toLocaleDateString();
     const txnId = 'TXN-' + Date.now().toString().slice(-6);
+    const serialNum = 'SN-' + Math.floor(1000000000 + Math.random() * 9000000000);
 
-    salesLog.unshift({ txnId, date: timestamp, dateOnly, customer: custName, itemsCount, itemsDetails: details, total: saleTotal, cashier: currentUser });
+    const saleRecord = {
+      txnId,
+      serialNum,
+      date: timestamp,
+      dateOnly,
+      customer: custName,
+      storePhone: storePhone,
+      itemsCount,
+      itemsDetails: details,
+      subtotal: calc.subtotal,
+      tax: calc.taxVal,
+      total: calc.grandTotal,
+      tended: calc.tended || calc.grandTotal,
+      change: calc.change,
+      cashier: currentUser,
+      currency
+    };
 
+    salesLog.unshift(saleRecord);
+
+    // Populate Receipt Modal
     document.getElementById('rTransactionId').innerText = `Receipt #: ${txnId} | Cashier: ${currentUser}`;
+    document.getElementById('rSerialNum').innerText = `Serial #: ${serialNum}`;
     document.getElementById('rDate').innerText = `Date: ${timestamp}`;
     document.getElementById('rCustomer').innerText = `Customer: ${custName}`;
     document.getElementById('rItems').innerHTML = receiptHTML;
-    document.getElementById('rTotal').innerText = `GH₵ ${saleTotal.toFixed(2)}`;
+
+    document.getElementById('rSubtotal').innerText = `${currency} ${calc.subtotal.toFixed(2)}`;
+    document.getElementById('rTax').innerText = `${currency} ${calc.taxVal.toFixed(2)}`;
+    document.getElementById('rTotal').innerText = `${currency} ${calc.grandTotal.toFixed(2)}`;
+    document.getElementById('rTended').innerText = `${currency} ${(calc.tended || calc.grandTotal).toFixed(2)}`;
+    document.getElementById('rChange').innerText = `${currency} ${calc.change.toFixed(2)}`;
+
+    // Generate Barcode
+    try {
+      JsBarcode("#receiptBarcode", serialNum, {
+        format: "CODE128",
+        lineColor: "#000",
+        width: 1.5,
+        height: 40,
+        displayValue: true,
+        fontSize: 10
+      });
+    } catch (e) {
+      console.error("Barcode generation failed", e);
+    }
+
     document.getElementById('receiptModal').style.display = 'flex';
 
-    cart = []; saveData(); renderInventory(); renderCart(); renderStats();
+    cart = [];
+    document.getElementById('tendedAmount').value = '';
+    saveData(); renderInventory(); renderCart(); renderStats();
   }
 
   function saveReceiptPDF() {
@@ -1146,10 +1578,10 @@
       groupedData[recordDate].txns.push(s);
     });
 
-    document.getElementById('totalRevenue').innerText = `GH₵ ${todayRev.toFixed(2)}`;
+    document.getElementById('totalRevenue').innerText = `${currency} ${todayRev.toFixed(2)}`;
     document.getElementById('itemsSold').innerText = todayCount;
 
-    if(Object.keys(groupedData).length === 0) {
+    if (Object.keys(groupedData).length === 0) {
       historyList.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">No recorded activities yet.</p>`;
     }
 
@@ -1164,14 +1596,14 @@
       const txnsHTML = day.txns.map(t => `
         <div class="sales-item">
           <span>${t.date.split(', ')[1] || t.date} - ${t.customer} (${t.itemsCount} items) [${t.cashier || 'System'}]</span>
-          <span style="color: var(--accent); font-weight: bold;">+GH₵ ${(t.total || 0).toFixed(2)}</span>
+          <span style="color: var(--accent); font-weight: bold;">+${t.currency || currency} ${(t.total || 0).toFixed(2)}</span>
         </div>
       `).join('');
 
       groupDiv.innerHTML = `
         <div class="day-header" onclick="toggleDayGroup('${safeId}')">
           <span>📅 ${isToday ? 'Today' : dateKey} (${day.items} items sold)</span>
-          <span>GH₵ ${day.total.toFixed(2)} ▼</span>
+          <span>${currency} ${day.total.toFixed(2)} ▼</span>
         </div>
         <div class="day-txns" id="day-log-${safeId}">
           ${txnsHTML}
@@ -1189,10 +1621,17 @@
 
   function exportCSV() {
     if (salesLog.length === 0) return alert('No sales available to export.');
-    let csv = "Transaction ID,Date,Customer,Cashier,Product,Unit Price,Qty,Line Total,Transaction Total\n";
+    let csv = "Transaction ID,Serial No,Date,Customer,Store Phone,Cashier,Product,Unit Price,Qty,Subtotal,Tax,Transaction Total,Tended,Change,Currency\n";
     salesLog.forEach(s => {
-      if (s.itemsDetails?.length) s.itemsDetails.forEach(i => csv += `"${s.txnId}","${s.date}","${s.customer}","${s.cashier || 'System'}","${i.name}",${i.unitPrice},${i.qty},${i.lineTotal},${s.total}\n`);
-      else csv += `"${s.txnId}","${s.date}","${s.customer}","${s.cashier || 'System'}","Summary",0,${s.itemsCount},${s.total},${s.total}\n`;
+      const curr = s.currency || currency;
+      const sPhone = s.storePhone || storePhone;
+      if (s.itemsDetails?.length) {
+        s.itemsDetails.forEach(i => {
+          csv += `"${s.txnId}","${s.serialNum || 'N/A'}","${s.date}","${s.customer}","${sPhone}","${s.cashier || 'System'}","${i.name}",${i.unitPrice},${i.qty},${s.subtotal || s.total},${s.tax || 0},${s.total},${s.tended || s.total},${s.change || 0},"${curr}"\n`;
+        });
+      } else {
+        csv += `"${s.txnId}","${s.serialNum || 'N/A'}","${s.date}","${s.customer}","${sPhone}","${s.cashier || 'System'}","Summary",0,${s.itemsCount},${s.subtotal || s.total},${s.tax || 0},${s.total},${s.tended || s.total},${s.change || 0},"${curr}"\n`;
+      }
     });
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a'); a.href = url; a.download = `Sales_${Date.now()}.csv`;
@@ -1200,7 +1639,9 @@
   }
 
   // Startup Initialization
-  checkAuthState(); renderInventory(); renderCustomers(); renderCart(); renderStats(); initFirebaseSync();
+  checkAuthState();
+  if (syncKey) initFirebaseSync();
 </script>
 </body>
 </html>
+
